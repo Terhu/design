@@ -21,9 +21,8 @@ Count=1
 File0=UART.jpg
 ActiveImageIndex=0
 [OPENED_FILES]
-Count=2
+Count=1
 File0=UART.c
-File1=..\..\..\Public\Documents\Mikroelektronika\mikroC PRO for PIC\Examples\easypic5_examples_p16f877a\EasyPIC5 Examples (P16F877A)\mikroC PRO for PIC\LCD\LCD.c
 [EEPROM]
 Count=0
 [ACTIVE_COMMENTS_FILES]
