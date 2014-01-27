@@ -61,15 +61,54 @@ char * Data_Eeprom_Read(int item)
  return donnees;
 }
 
- void Data_I2C_EEPROM_Write(char * donnees)
+void Data_I2C_EEPROM_Write(char * donnees)
 {
  short indice=0;
+
  while(donnees[indice] != '\0')
  {
- EEPROM_Write(adresse+indice,donnees[indice]);
+ I2C1_Start();
+ I2C1_Wr(0xA0);
+ I2C1_Wr(adresse+indice);
+ I2C1_Wr(donnees[indice]);
+ I2C1_Stop();
+ Delay_ms(10);
  ++indice;
  }
  adresse += indice;
+
+}
+
+void I2C_Data_Write(char * lattitude, char * longitude)
+{
+ Data_I2C_EEPROM_Write(lattitude);
+ Data_I2C_EEPROM_Write(longitude);
+}
+
+char * Data_I2C_EEPROM_Read(int item)
+{
+ int indice;
+ char donnees[22];
+ char address = 0;
+ char car;
+
+ address += (item*21);
+
+ for (indice = 0; indice < 21; ++indice)
+ {
+ I2C1_Start();
+ I2C1_Wr(0xA0);
+ I2C1_Wr(address+indice);
+ I2C1_Repeated_Start();
+ I2C1_Wr(0xA1);
+ car = I2C1_Rd(0u);
+ I2C1_Stop();
+ Delay_ms(10);
+ donnees[indice]=car;
+ }
+ donnees[21]='\0';
+
+ return donnees;
 }
 
 void main()
@@ -80,31 +119,15 @@ void main()
 
  UART1_Init(9600);
  Delay_ms(100);
-#line 116 "C:/Users/biamino/Documents/TP_DESIGN/TP_memory.c"
+#line 155 "C:/Users/biamino/Documents/TP_DESIGN/TP_memory.c"
  Lcd_Init();
 
  Lcd_Cmd(_LCD_CLEAR);
  Lcd_Cmd(_LCD_CURSOR_OFF);
 
  counter = 0;
-#line 129 "C:/Users/biamino/Documents/TP_DESIGN/TP_memory.c"
+#line 168 "C:/Users/biamino/Documents/TP_DESIGN/TP_memory.c"
  I2C1_Init(100000);
- I2C1_Start();
- I2C1_Wr(0xA2);
- I2C1_Wr(0x02);
- I2C1_Wr(0x4A);
- I2C1_Stop();
-
- Delay_100ms();
-
- I2C1_Start();
- I2C1_Wr(0xA2);
- I2C1_Wr(2);
- I2C1_Repeated_Start();
- I2C1_Wr(0xA3);
- UART1_Write(I2C1_Rd(0u));
- I2C1_Stop();
-
 
 
  while (1)
@@ -175,20 +198,13 @@ void main()
 
  if (uart_rd == '*')
  {
- Data_Write(lattitude,longitude);
 
+
+ I2C_Data_Write(lattitude,longitude);
  Delay_ms(250);
 
- UART1_Write(13);
- UART1_Write(10);
- UART1_Write_Text(Data_Eeprom_Read(0));
-
-
-
-
-
-
-
+ UART1_Write_Text(Data_I2C_EEPROM_Read(0));
+#line 256 "C:/Users/biamino/Documents/TP_DESIGN/TP_memory.c"
  }
  }
 

@@ -10,21 +10,22 @@ main
 		Delay_5500us
 		Delay_50us
 	I2C1_Init
-	I2C1_Start
-		I2C1_Is_Idle
-	I2C1_Wr
-	I2C1_Stop
-	Delay_100ms
-	I2C1_Repeated_Start
-	I2C1_Rd
-	UART1_Write
 	UART1_Data_Ready
 	UART1_Read
-	Data_Write
-		Data_Eeprom_Write
-			EEPROM_Write
-	Data_Eeprom_Read
+	UART1_Write
+	I2C_Data_Write
+		Data_I2C_EEPROM_Write
+			I2C1_Start
+				I2C1_Is_Idle
+			I2C1_Wr
+			I2C1_Stop
+	Data_I2C_EEPROM_Read
 		Mul_8x8_U
-		EEPROM_Read
+		I2C1_Start
+			I2C1_Is_Idle
+		I2C1_Wr
+		I2C1_Repeated_Start
+		I2C1_Rd
+		I2C1_Stop
 	UART1_Write_Text
 		UART1_Write
