@@ -46,9 +46,9 @@ int longitude_ptr = 0;
 int counter;
 char affichage[4] ;
 
- char adresse = 0x00;
+unsigned int adresse = 0;
  
- char * str;
+char * str;
 
 
 void Data_Eeprom_Write(char * donnees)
@@ -84,6 +84,8 @@ char * Data_Eeprom_Read(int item)
   
   return donnees;
 }
+
+/** Memoire 24LC02B **/
 
 void Data_I2C_EEPROM_Write(char * donnees)
 {
@@ -134,6 +136,76 @@ char * Data_I2C_EEPROM_Read(int item)
 
   return donnees;
 }
+
+/** Memoire 24LC32A **/
+
+void Data_I2C_24LC32A_EEPROM_Write(char * donnees)
+{
+     unsigned short indice=0;
+     unsigned int address;
+     unsigned short low_address;
+     unsigned short high_address;
+
+     while(donnees[indice] != '\0')
+     {
+       address = adresse+indice;
+       
+       low_address = address & 0x00FF;
+       high_address = address & 0x0F00;
+
+       I2C1_Start();              // issue I2C start signal
+       I2C1_Wr(0xAE);             // send byte via I2C  (device address + W)
+       I2C1_Wr(high_address);   // send byte (address of EEPROM location)
+       I2C1_Wr(low_address);   // send byte (address of EEPROM location)
+       I2C1_Wr(donnees[indice]);  // send data (data to be written)
+       I2C1_Stop();               // issue I2C stop signal
+       Delay_ms(10);
+       ++indice;
+     }
+     adresse += indice;
+}
+
+void I2C_24LC32A_Data_Write(char * lattitude, char * longitude)
+{
+     Data_I2C_24LC32A_EEPROM_Write(lattitude);
+     Data_I2C_24LC32A_EEPROM_Write(longitude);
+}
+
+char * Data_I2C_24LC32A_EEPROM_Read(unsigned int item)
+{
+  unsigned short indice;
+  char donnees[22];
+  unsigned int address = 0;
+  unsigned short low_address;
+  unsigned short high_address;
+  char car;
+
+  address += (item*21);
+
+  for (indice = 0; indice < 21; ++indice)
+  {
+       low_address = address & 0x00FF;
+       high_address = address & 0x0F00;
+       
+       I2C1_Start();              // issue I2C start signal
+       I2C1_Wr(0xAE);             // send byte via I2C  (device address + W)
+       I2C1_Wr(high_address);     // send byte (data address)
+       I2C1_Wr(low_address);      // send byte (data address)
+       I2C1_Repeated_Start();     // issue I2C signal repeated start
+       I2C1_Wr(0xAF);             // send byte (device address + R)
+       car = I2C1_Rd(0u);         // Read the data (NO acknowledge)
+       I2C1_Stop();               // issue I2C stop signal
+       Delay_ms(10);
+       donnees[indice]=car;
+       
+       address += 1;
+  }
+  donnees[21]='\0';
+
+  return donnees;
+}
+
+/** Main **/
 
 void main()
 {
@@ -238,10 +310,10 @@ void main()
         {
           // Data_Write(lattitude,longitude);
 
-           I2C_Data_Write(lattitude,longitude);
+           I2C_24LC32A_Data_Write(lattitude,longitude);
            Delay_ms(250);
            
-           UART1_Write_Text(Data_I2C_EEPROM_Read(0));
+           UART1_Write_Text(Data_I2C_24LC32A_EEPROM_Read(0));
 
           // UART1_Write(13);
            //UART1_Write(10);

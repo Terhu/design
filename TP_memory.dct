@@ -347,6 +347,8 @@ data_address
 data_address_bit
 data_eeprom_read
 data_eeprom_write
+data_i2c_24lc32a_eeprom_read
+data_i2c_24lc32a_eeprom_write
 data_i2c_eeprom_read
 data_i2c_eeprom_write
 data_write
@@ -468,6 +470,7 @@ go_bit
 go_done
 go_done_bit
 halfbits
+i2c_24lc32a_data_write
 i2c_data
 i2c_data_bit
 i2c_data_write

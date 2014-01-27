@@ -22,9 +22,9 @@ int longitude_ptr = 0;
 int counter;
 char affichage[4] ;
 
- char adresse = 0x00;
+unsigned int adresse = 0;
 
- char * str;
+char * str;
 
 
 void Data_Eeprom_Write(char * donnees)
@@ -60,6 +60,8 @@ char * Data_Eeprom_Read(int item)
 
  return donnees;
 }
+
+
 
 void Data_I2C_EEPROM_Write(char * donnees)
 {
@@ -111,6 +113,76 @@ char * Data_I2C_EEPROM_Read(int item)
  return donnees;
 }
 
+
+
+void Data_I2C_24LC32A_EEPROM_Write(char * donnees)
+{
+ unsigned short indice=0;
+ unsigned int address;
+ unsigned short low_address;
+ unsigned short high_address;
+
+ while(donnees[indice] != '\0')
+ {
+ address = adresse+indice;
+
+ low_address = address & 0x00FF;
+ high_address = address & 0x0F00;
+
+ I2C1_Start();
+ I2C1_Wr(0xAE);
+ I2C1_Wr(high_address);
+ I2C1_Wr(low_address);
+ I2C1_Wr(donnees[indice]);
+ I2C1_Stop();
+ Delay_ms(10);
+ ++indice;
+ }
+ adresse += indice;
+}
+
+void I2C_24LC32A_Data_Write(char * lattitude, char * longitude)
+{
+ Data_I2C_24LC32A_EEPROM_Write(lattitude);
+ Data_I2C_24LC32A_EEPROM_Write(longitude);
+}
+
+char * Data_I2C_24LC32A_EEPROM_Read(unsigned int item)
+{
+ unsigned short indice;
+ char donnees[22];
+ unsigned int address = 0;
+ unsigned short low_address;
+ unsigned short high_address;
+ char car;
+
+ address += (item*21);
+
+ for (indice = 0; indice < 21; ++indice)
+ {
+ low_address = address & 0x00FF;
+ high_address = address & 0x0F00;
+
+ I2C1_Start();
+ I2C1_Wr(0xAE);
+ I2C1_Wr(high_address);
+ I2C1_Wr(low_address);
+ I2C1_Repeated_Start();
+ I2C1_Wr(0xAF);
+ car = I2C1_Rd(0u);
+ I2C1_Stop();
+ Delay_ms(10);
+ donnees[indice]=car;
+
+ address += 1;
+ }
+ donnees[21]='\0';
+
+ return donnees;
+}
+
+
+
 void main()
 {
  char good_trame = 0;
@@ -119,14 +191,14 @@ void main()
 
  UART1_Init(9600);
  Delay_ms(100);
-#line 155 "C:/Users/biamino/Documents/TP_DESIGN/TP_memory.c"
+#line 227 "C:/Users/biamino/Documents/TP_DESIGN/TP_memory.c"
  Lcd_Init();
 
  Lcd_Cmd(_LCD_CLEAR);
  Lcd_Cmd(_LCD_CURSOR_OFF);
 
  counter = 0;
-#line 168 "C:/Users/biamino/Documents/TP_DESIGN/TP_memory.c"
+#line 240 "C:/Users/biamino/Documents/TP_DESIGN/TP_memory.c"
  I2C1_Init(100000);
 
 
@@ -200,11 +272,11 @@ void main()
  {
 
 
- I2C_Data_Write(lattitude,longitude);
+ I2C_24LC32A_Data_Write(lattitude,longitude);
  Delay_ms(250);
 
- UART1_Write_Text(Data_I2C_EEPROM_Read(0));
-#line 256 "C:/Users/biamino/Documents/TP_DESIGN/TP_memory.c"
+ UART1_Write_Text(Data_I2C_24LC32A_EEPROM_Read(0));
+#line 328 "C:/Users/biamino/Documents/TP_DESIGN/TP_memory.c"
  }
  }
 
