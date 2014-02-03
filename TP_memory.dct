@@ -545,6 +545,7 @@ lcd_rs_direction
 ldexp
 ldiv
 left_to_right
+listen
 log
 log10
 longint2double

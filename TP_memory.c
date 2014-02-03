@@ -38,11 +38,14 @@ sbit LCD_D5_Direction at TRISB1_bit;
 sbit LCD_D6_Direction at TRISB2_bit;
 sbit LCD_D7_Direction at TRISB3_bit;
 
+char uart_rd;
+
 bit start_button;
 bit stop_button;
 bit send_button;
 
-char uart_rd;
+bit listen;
+
 char lattitude[15];
 int lattitude_ptr = 0;
 char longitude[15];
@@ -214,11 +217,15 @@ char * Data_I2C_24LC32A_EEPROM_Read(unsigned int item)
 void initButton()
 {
  TRISB = 0x07;
+ start_button = 0;
+ stop_button = 0;
+ send_button = 0;
 }
 
 void startButtonAction()
 {
-     UART1_Write_Text("start\n");
+     UART1_Write_Text("Start\n");
+     listen = 1;
 }
 
 void startButton()
@@ -236,7 +243,8 @@ void startButton()
 
 void stopButtonAction()
 {
-     UART1_Write_Text("stop\n");
+     UART1_Write_Text("Stop\n");
+     listen = 0;
 }
 
 void stopButton()
@@ -255,7 +263,7 @@ void stopButton()
 
 void sendButtonAction()
 {
-     UART1_Write_Text("send\n");
+     UART1_Write_Text("Send\n");
 }
 
 void sendButton()
@@ -272,7 +280,6 @@ void sendButton()
 
 }
 
-
 /** Main **/
 
 void main()
@@ -280,6 +287,8 @@ void main()
  char good_trame = 0;
  short g_counter = 0;
  // ADCON1 = 0;                      // Configure AN pins as digital
+ 
+ INTCON = 0xC9;
 
   UART1_Init(9600);               // Initialize UART module at 9600 bps
   Delay_ms(100);                  // Wait for UART module to stabilize
@@ -293,12 +302,17 @@ void main()
    I2C1_Init(100000);         // initialize I2C communication
 
    initButton();
+   
+   listen = 0;
 
   while (1)
   {
    startButton();
    stopButton();
-  sendButton();
+   sendButton();
+   
+   if (listen)
+   {
   
     if (UART1_Data_Ready())      // If data is received,
     {
@@ -307,8 +321,6 @@ void main()
       if (uart_rd == '$')         // if we read a gps frame
       {
          counter = 0;          // counter initialization
-         UART1_Write(13);
-         UART1_Write(10);
          lattitude_ptr = 0;
          longitude_ptr = 0;
          g_counter = 0;
@@ -327,12 +339,7 @@ void main()
       
       if (uart_rd == ',')        // word separation symbole
       {
-           ++counter;             // update counter
-           if (counter == 4)        // add space between results
-           {
-            UART1_Write(13);
-            UART1_Write(10);
-           }
+           ++counter;
       }
 
       if (good_trame)
@@ -340,26 +347,22 @@ void main()
 
         if (counter == 2 && uart_rd != ',')      // lattitude data
         {
-           UART1_Write(uart_rd);
            lattitude[lattitude_ptr++] = uart_rd;
         }
 
         if (counter == 3 && uart_rd != ',')      // lattitude hemisphere indicator (N or S)
         {
-         UART1_Write(uart_rd);
          lattitude[lattitude_ptr++] = uart_rd;
          lattitude[lattitude_ptr++] = '\0';
          }
 
         if (counter == 4 && uart_rd != ',')      // longitude data
         {
-         UART1_Write(uart_rd);
          longitude[longitude_ptr++] = uart_rd;
          }
 
         if (counter == 5 && uart_rd != ',')      //   longitude hemisphere indicator (E or W)
         {
-         UART1_Write(uart_rd);
          longitude[longitude_ptr++] = uart_rd;
          longitude[longitude_ptr++] = '\0';
          }
@@ -369,13 +372,8 @@ void main()
           // Data_Write(lattitude,longitude);
 
            I2C_24LC32A_Data_Write(lattitude,longitude);
-           Delay_ms(250);
-           
-           UART1_Write_Text(Data_I2C_24LC32A_EEPROM_Read(0));
-           
-           Delay_ms(250);
-
-           UART1_Write_Text(Data_I2C_24LC32A_EEPROM_Read(15));
+           UART1_Write_Text(lattitude);
+           Delay_ms(4750);
 
           // UART1_Write(13);
            //UART1_Write(10);
@@ -386,10 +384,11 @@ void main()
            //Lcd_Out(2,1,longitude);
            //Lcd_Out(1,1,str);
 
-
         }
       }
 
+    }
+    
     }
 
   }

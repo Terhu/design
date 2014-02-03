@@ -14,11 +14,14 @@ sbit LCD_D5_Direction at TRISB1_bit;
 sbit LCD_D6_Direction at TRISB2_bit;
 sbit LCD_D7_Direction at TRISB3_bit;
 
+char uart_rd;
+
 bit start_button;
 bit stop_button;
 bit send_button;
 
-char uart_rd;
+bit listen;
+
 char lattitude[15];
 int lattitude_ptr = 0;
 char longitude[15];
@@ -190,11 +193,15 @@ char * Data_I2C_24LC32A_EEPROM_Read(unsigned int item)
 void initButton()
 {
  TRISB = 0x07;
+ start_button = 0;
+ stop_button = 0;
+ send_button = 0;
 }
 
 void startButtonAction()
 {
- UART1_Write_Text("start\n");
+ UART1_Write_Text("Start\n");
+ listen = 1;
 }
 
 void startButton()
@@ -212,7 +219,8 @@ void startButton()
 
 void stopButtonAction()
 {
- UART1_Write_Text("stop\n");
+ UART1_Write_Text("Stop\n");
+ listen = 0;
 }
 
 void stopButton()
@@ -231,7 +239,7 @@ void stopButton()
 
 void sendButtonAction()
 {
- UART1_Write_Text("send\n");
+ UART1_Write_Text("Send\n");
 }
 
 void sendButton()
@@ -250,12 +258,13 @@ void sendButton()
 
 
 
-
 void main()
 {
  char good_trame = 0;
  short g_counter = 0;
 
+
+ INTCON = 0xC9;
 
  UART1_Init(9600);
  Delay_ms(100);
@@ -270,11 +279,16 @@ void main()
 
  initButton();
 
+ listen = 0;
+
  while (1)
  {
  startButton();
  stopButton();
  sendButton();
+
+ if (listen)
+ {
 
  if (UART1_Data_Ready())
  {
@@ -283,8 +297,6 @@ void main()
  if (uart_rd == '$')
  {
  counter = 0;
- UART1_Write(13);
- UART1_Write(10);
  lattitude_ptr = 0;
  longitude_ptr = 0;
  g_counter = 0;
@@ -304,11 +316,6 @@ void main()
  if (uart_rd == ',')
  {
  ++counter;
- if (counter == 4)
- {
- UART1_Write(13);
- UART1_Write(10);
- }
  }
 
  if (good_trame)
@@ -316,26 +323,22 @@ void main()
 
  if (counter == 2 && uart_rd != ',')
  {
- UART1_Write(uart_rd);
  lattitude[lattitude_ptr++] = uart_rd;
  }
 
  if (counter == 3 && uart_rd != ',')
  {
- UART1_Write(uart_rd);
  lattitude[lattitude_ptr++] = uart_rd;
  lattitude[lattitude_ptr++] = '\0';
  }
 
  if (counter == 4 && uart_rd != ',')
  {
- UART1_Write(uart_rd);
  longitude[longitude_ptr++] = uart_rd;
  }
 
  if (counter == 5 && uart_rd != ',')
  {
- UART1_Write(uart_rd);
  longitude[longitude_ptr++] = uart_rd;
  longitude[longitude_ptr++] = '\0';
  }
@@ -345,15 +348,21 @@ void main()
 
 
  I2C_24LC32A_Data_Write(lattitude,longitude);
- Delay_ms(250);
+ UART1_Write_Text(lattitude);
+ Delay_ms(4750);
 
- UART1_Write_Text(Data_I2C_24LC32A_EEPROM_Read(0));
 
- Delay_ms(250);
 
- UART1_Write_Text(Data_I2C_24LC32A_EEPROM_Read(15));
-#line 390 "C:/Users/biamino/Documents/TP_DESIGN/TP_memory.c"
+
+
+
+
+
+
+
  }
+ }
+
  }
 
  }
