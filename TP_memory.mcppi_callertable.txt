@@ -10,6 +10,25 @@ main
 		Delay_5500us
 		Delay_50us
 	I2C1_Init
+	initButton
+	startButton
+		Button
+			Delay_500us
+		startButtonAction
+			UART1_Write_Text
+				UART1_Write
+	stopButton
+		Button
+			Delay_500us
+		stopButtonAction
+			UART1_Write_Text
+				UART1_Write
+	sendButton
+		Button
+			Delay_500us
+		sendButtonAction
+			UART1_Write_Text
+				UART1_Write
 	UART1_Data_Ready
 	UART1_Read
 	UART1_Write

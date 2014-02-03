@@ -38,6 +38,10 @@ sbit LCD_D5_Direction at TRISB1_bit;
 sbit LCD_D6_Direction at TRISB2_bit;
 sbit LCD_D7_Direction at TRISB3_bit;
 
+bit start_button;
+bit stop_button;
+bit send_button;
+
 char uart_rd;
 char lattitude[15];
 int lattitude_ptr = 0;
@@ -151,7 +155,7 @@ void Data_I2C_24LC32A_EEPROM_Write(char * donnees)
        address = adresse+indice;
        
        low_address = address & 0x00FF;
-       high_address = address & 0x0F00;
+       high_address = (address >> 8) & 0x00FF;
 
        I2C1_Start();              // issue I2C start signal
        I2C1_Wr(0xAE);             // send byte via I2C  (device address + W)
@@ -185,7 +189,7 @@ char * Data_I2C_24LC32A_EEPROM_Read(unsigned int item)
   for (indice = 0; indice < 21; ++indice)
   {
        low_address = address & 0x00FF;
-       high_address = address & 0x0F00;
+       high_address = (address >> 8) & 0x00FF;
        
        I2C1_Start();              // issue I2C start signal
        I2C1_Wr(0xAE);             // send byte via I2C  (device address + W)
@@ -205,6 +209,70 @@ char * Data_I2C_24LC32A_EEPROM_Read(unsigned int item)
   return donnees;
 }
 
+/** Button **/
+
+void initButton()
+{
+ TRISB = 0x07;
+}
+
+void startButtonAction()
+{
+     UART1_Write_Text("start\n");
+}
+
+void startButton()
+{
+    if (Button(&PORTB, 0, 1, 1))
+    {
+      start_button = 1;
+    }
+    if (start_button && Button(&PORTB, 0, 1, 0))
+    {
+      start_button = 0;
+      startButtonAction();
+    }
+}
+
+void stopButtonAction()
+{
+     UART1_Write_Text("stop\n");
+}
+
+void stopButton()
+{
+    if (Button(&PORTB, 1, 1, 1))
+    {
+      stop_button = 1;
+    }
+    if (stop_button && Button(&PORTB, 1, 1, 0))
+    {
+      stop_button = 0;
+      stopButtonAction();
+    }
+
+}
+
+void sendButtonAction()
+{
+     UART1_Write_Text("send\n");
+}
+
+void sendButton()
+{
+    if (Button(&PORTB, 2, 1, 1))
+    {
+      send_button = 1;
+    }
+    if (send_button && Button(&PORTB, 2, 1, 0))
+    {
+      send_button = 0;
+      sendButtonAction();
+    }
+
+}
+
+
 /** Main **/
 
 void main()
@@ -215,33 +283,23 @@ void main()
 
   UART1_Init(9600);               // Initialize UART module at 9600 bps
   Delay_ms(100);                  // Wait for UART module to stabilize
-
-
-/*EEPROM_Write(0x02,'a');
-  EEPROM_Write(0x03,'b');
-  EEPROM_Write(0x04,'c');*/
-  //UART1_Write_Text("Start");
-  //UART1_Write(13);
-  //UART1_Write(10);
-
   Lcd_Init();                        // Initialize LCD
 
   Lcd_Cmd(_LCD_CLEAR);               // Clear display
   Lcd_Cmd(_LCD_CURSOR_OFF);          // Cursor off
 
   counter = 0;
-  
-/*affichage[0]=EEPROM_Read(0x02);
-  affichage[1]=EEPROM_Read(0x03);
-  affichage[2]=EEPROM_Read(0x04);
-
-   Lcd_Out(1,1,affichage);*/
    
    I2C1_Init(100000);         // initialize I2C communication
 
+   initButton();
 
   while (1)
-  {                     // Endless loop
+  {
+   startButton();
+   stopButton();
+  sendButton();
+  
     if (UART1_Data_Ready())      // If data is received,
     {
       uart_rd = UART1_Read();     // read the received data,
@@ -314,6 +372,10 @@ void main()
            Delay_ms(250);
            
            UART1_Write_Text(Data_I2C_24LC32A_EEPROM_Read(0));
+           
+           Delay_ms(250);
+
+           UART1_Write_Text(Data_I2C_24LC32A_EEPROM_Read(15));
 
           // UART1_Write(13);
            //UART1_Write(10);

@@ -494,6 +494,7 @@ ibov
 ibov_bit
 ibov_trise_bit
 indf
+initbutton
 int2double
 intcon
 inte
@@ -864,6 +865,9 @@ s1d13700_write_text
 sdiv3232l
 sen
 sen_bit
+send_button
+sendbutton
+sendbuttonaction
 setfdz32
 setfov32
 setfun32
@@ -1073,7 +1077,13 @@ sspm3_bit
 sspov
 sspov_bit
 sspstat
+start_button
+startbutton
+startbuttonaction
 status
+stop_button
+stopbutton
+stopbuttonaction
 str
 strcat
 strchr

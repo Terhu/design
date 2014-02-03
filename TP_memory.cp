@@ -14,6 +14,10 @@ sbit LCD_D5_Direction at TRISB1_bit;
 sbit LCD_D6_Direction at TRISB2_bit;
 sbit LCD_D7_Direction at TRISB3_bit;
 
+bit start_button;
+bit stop_button;
+bit send_button;
+
 char uart_rd;
 char lattitude[15];
 int lattitude_ptr = 0;
@@ -127,7 +131,7 @@ void Data_I2C_24LC32A_EEPROM_Write(char * donnees)
  address = adresse+indice;
 
  low_address = address & 0x00FF;
- high_address = address & 0x0F00;
+ high_address = (address >> 8) & 0x00FF;
 
  I2C1_Start();
  I2C1_Wr(0xAE);
@@ -161,7 +165,7 @@ char * Data_I2C_24LC32A_EEPROM_Read(unsigned int item)
  for (indice = 0; indice < 21; ++indice)
  {
  low_address = address & 0x00FF;
- high_address = address & 0x0F00;
+ high_address = (address >> 8) & 0x00FF;
 
  I2C1_Start();
  I2C1_Wr(0xAE);
@@ -183,6 +187,70 @@ char * Data_I2C_24LC32A_EEPROM_Read(unsigned int item)
 
 
 
+void initButton()
+{
+ TRISB = 0x07;
+}
+
+void startButtonAction()
+{
+ UART1_Write_Text("start\n");
+}
+
+void startButton()
+{
+ if (Button(&PORTB, 0, 1, 1))
+ {
+ start_button = 1;
+ }
+ if (start_button && Button(&PORTB, 0, 1, 0))
+ {
+ start_button = 0;
+ startButtonAction();
+ }
+}
+
+void stopButtonAction()
+{
+ UART1_Write_Text("stop\n");
+}
+
+void stopButton()
+{
+ if (Button(&PORTB, 1, 1, 1))
+ {
+ stop_button = 1;
+ }
+ if (stop_button && Button(&PORTB, 1, 1, 0))
+ {
+ stop_button = 0;
+ stopButtonAction();
+ }
+
+}
+
+void sendButtonAction()
+{
+ UART1_Write_Text("send\n");
+}
+
+void sendButton()
+{
+ if (Button(&PORTB, 2, 1, 1))
+ {
+ send_button = 1;
+ }
+ if (send_button && Button(&PORTB, 2, 1, 0))
+ {
+ send_button = 0;
+ sendButtonAction();
+ }
+
+}
+
+
+
+
 void main()
 {
  char good_trame = 0;
@@ -191,19 +259,23 @@ void main()
 
  UART1_Init(9600);
  Delay_ms(100);
-#line 227 "C:/Users/biamino/Documents/TP_DESIGN/TP_memory.c"
  Lcd_Init();
 
  Lcd_Cmd(_LCD_CLEAR);
  Lcd_Cmd(_LCD_CURSOR_OFF);
 
  counter = 0;
-#line 240 "C:/Users/biamino/Documents/TP_DESIGN/TP_memory.c"
+
  I2C1_Init(100000);
 
+ initButton();
 
  while (1)
  {
+ startButton();
+ stopButton();
+ sendButton();
+
  if (UART1_Data_Ready())
  {
  uart_rd = UART1_Read();
@@ -276,7 +348,11 @@ void main()
  Delay_ms(250);
 
  UART1_Write_Text(Data_I2C_24LC32A_EEPROM_Read(0));
-#line 328 "C:/Users/biamino/Documents/TP_DESIGN/TP_memory.c"
+
+ Delay_ms(250);
+
+ UART1_Write_Text(Data_I2C_24LC32A_EEPROM_Read(15));
+#line 390 "C:/Users/biamino/Documents/TP_DESIGN/TP_memory.c"
  }
  }
 
