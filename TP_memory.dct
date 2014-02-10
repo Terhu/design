@@ -501,6 +501,8 @@ inte
 inte_bit
 intedg
 intedg_bit
+interrupt
+interrupt_configuration
 intf
 intf_bit
 inttohex
@@ -869,6 +871,7 @@ sen_bit
 send_button
 sendbutton
 sendbuttonaction
+sendbuttonflag
 setfdz32
 setfov32
 setfun32
@@ -1081,10 +1084,12 @@ sspstat
 start_button
 startbutton
 startbuttonaction
+startbuttonflag
 status
 stop_button
 stopbutton
 stopbuttonaction
+stopbuttonflag
 str
 strcat
 strchr

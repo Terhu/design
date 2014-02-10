@@ -44,6 +44,10 @@ bit start_button;
 bit stop_button;
 bit send_button;
 
+bit startButtonFlag;
+bit stopButtonFlag;
+bit sendButtonFlag;
+
 bit listen;
 
 char lattitude[15];
@@ -216,7 +220,7 @@ char * Data_I2C_24LC32A_EEPROM_Read(unsigned int item)
 
 void initButton()
 {
- TRISB = 0x07;
+ TRISB = 0x0B;
  start_button = 0;
  stop_button = 0;
  send_button = 0;
@@ -226,6 +230,7 @@ void startButtonAction()
 {
      UART1_Write_Text("Start\n");
      listen = 1;
+     startButtonFlag = 0;
 }
 
 void startButton()
@@ -245,6 +250,7 @@ void stopButtonAction()
 {
      UART1_Write_Text("Stop\n");
      listen = 0;
+     stopButtonFlag = 0;
 }
 
 void stopButton()
@@ -264,20 +270,62 @@ void stopButton()
 void sendButtonAction()
 {
      UART1_Write_Text("Send\n");
+     sendButtonFlag = 0;
 }
 
 void sendButton()
 {
-    if (Button(&PORTB, 2, 1, 1))
+    if (Button(&PORTB, 3, 1, 1))
     {
       send_button = 1;
     }
-    if (send_button && Button(&PORTB, 2, 1, 0))
+    if (send_button && Button(&PORTB, 3, 1, 0))
     {
       send_button = 0;
       sendButtonAction();
     }
 
+}
+
+/** Interrupt **/
+
+void interrupt_configuration()
+{
+     PORTB=0;
+     TRISB = 0xF0; // Initialisation du port B en entree pour RB7, RB6, RB5 et RB4
+     
+     INTCON.RBIE=1;     // Autorise l'IT du RB
+     INTCON.GIE=1;      // Autorisation generale des IT
+     INTCON.RBIF=0; 	   // Efface le flag d'IT sur RB cf p20 datasheet du 16F877A
+     
+     startButtonFlag = 0;
+     stopButtonFlag = 0;
+     sendButtonFlag = 0;
+}
+
+void interrupt()
+{
+     unsigned short portbValue;
+
+     if (intcon.RBIF == 1)  //Au moins une des entrées RB7 à RB4 a changé d'état
+     {
+        portbValue = PORTB;
+
+        if (portbValue == 0x80)    // RB7 appuyé
+        {
+            startButtonFlag = 1;
+        } 
+        else if (portbValue == 0x40)     // RB6 appuyé
+        {
+            stopButtonFlag  = 1;
+        } 
+        else if (portbValue == 0x20)// RB5 appuyé
+        {
+            sendButtonFlag  = 1;
+        }
+      }
+      INTCON.RBIF=0; // Efface le flag d'IT sur RB
+                      //sinon on reste dans la fonction d'interruption
 }
 
 /** Main **/
@@ -288,7 +336,7 @@ void main()
  short g_counter = 0;
  // ADCON1 = 0;                      // Configure AN pins as digital
  
- INTCON = 0xC9;
+ //INTCON = 0xC9;
 
   UART1_Init(9600);               // Initialize UART module at 9600 bps
   Delay_ms(100);                  // Wait for UART module to stabilize
@@ -301,15 +349,18 @@ void main()
    
    I2C1_Init(100000);         // initialize I2C communication
 
-   initButton();
+   interrupt_configuration();
+   
+   UART1_Write_Text("Start\n");
    
    listen = 0;
 
   while (1)
   {
-   startButton();
-   stopButton();
-   sendButton();
+   
+   if (startButtonFlag) startButtonAction();
+   if (stopButtonFlag) stopButtonAction();
+   if (sendButtonFlag) sendButtonAction();
    
    if (listen)
    {
@@ -373,7 +424,6 @@ void main()
 
            I2C_24LC32A_Data_Write(lattitude,longitude);
            UART1_Write_Text(lattitude);
-           Delay_ms(4750);
 
           // UART1_Write(13);
            //UART1_Write(10);
@@ -383,7 +433,6 @@ void main()
 
            //Lcd_Out(2,1,longitude);
            //Lcd_Out(1,1,str);
-
         }
       }
 

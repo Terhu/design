@@ -20,6 +20,10 @@ bit start_button;
 bit stop_button;
 bit send_button;
 
+bit startButtonFlag;
+bit stopButtonFlag;
+bit sendButtonFlag;
+
 bit listen;
 
 char lattitude[15];
@@ -192,7 +196,7 @@ char * Data_I2C_24LC32A_EEPROM_Read(unsigned int item)
 
 void initButton()
 {
- TRISB = 0x07;
+ TRISB = 0x0B;
  start_button = 0;
  stop_button = 0;
  send_button = 0;
@@ -202,6 +206,7 @@ void startButtonAction()
 {
  UART1_Write_Text("Start\n");
  listen = 1;
+ startButtonFlag = 0;
 }
 
 void startButton()
@@ -221,6 +226,7 @@ void stopButtonAction()
 {
  UART1_Write_Text("Stop\n");
  listen = 0;
+ stopButtonFlag = 0;
 }
 
 void stopButton()
@@ -240,19 +246,61 @@ void stopButton()
 void sendButtonAction()
 {
  UART1_Write_Text("Send\n");
+ sendButtonFlag = 0;
 }
 
 void sendButton()
 {
- if (Button(&PORTB, 2, 1, 1))
+ if (Button(&PORTB, 3, 1, 1))
  {
  send_button = 1;
  }
- if (send_button && Button(&PORTB, 2, 1, 0))
+ if (send_button && Button(&PORTB, 3, 1, 0))
  {
  send_button = 0;
  sendButtonAction();
  }
+
+}
+
+
+
+void interrupt_configuration()
+{
+ PORTB=0;
+ TRISB = 0xF0;
+
+ INTCON.RBIE=1;
+ INTCON.GIE=1;
+ INTCON.RBIF=0;
+
+ startButtonFlag = 0;
+ stopButtonFlag = 0;
+ sendButtonFlag = 0;
+}
+
+void interrupt()
+{
+ unsigned short portbValue;
+
+ if (intcon.RBIF == 1)
+ {
+ portbValue = PORTB;
+
+ if (portbValue == 0x80)
+ {
+ startButtonFlag = 1;
+ }
+ else if (portbValue == 0x40)
+ {
+ stopButtonFlag = 1;
+ }
+ else if (portbValue == 0x20)
+ {
+ sendButtonFlag = 1;
+ }
+ }
+ INTCON.RBIF=0;
 
 }
 
@@ -264,7 +312,7 @@ void main()
  short g_counter = 0;
 
 
- INTCON = 0xC9;
+
 
  UART1_Init(9600);
  Delay_ms(100);
@@ -277,15 +325,23 @@ void main()
 
  I2C1_Init(100000);
 
- initButton();
+ interrupt_configuration();
+
+
+
+ UART1_Write_Text("Start\n");
 
  listen = 0;
 
  while (1)
  {
- startButton();
- stopButton();
- sendButton();
+
+
+
+
+ if (startButtonFlag) startButtonAction();
+ if (stopButtonFlag) stopButtonAction();
+ if (sendButtonFlag) sendButtonAction();
 
  if (listen)
  {
