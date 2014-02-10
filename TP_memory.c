@@ -42,8 +42,7 @@ char uart_rd;
 
 /** Button **/
 
-bit startButtonFlag;
-bit stopButtonFlag;
+bit startAndStopButtonFlag;
 bit sendButtonFlag;
 
 bit listen;
@@ -219,23 +218,26 @@ char * Data_I2C_24LC32A_EEPROM_Read(unsigned int item)
 
 /** Button **/
 
-void startButtonAction()
+void startAndStopButtonAction()
 {
-     UART1_Write_Text("Start\n");
-     listen = 1;
-     startButtonFlag = 0;
-}
-
-void stopButtonAction()
-{
-     UART1_Write_Text("Stop\n");
-     listen = 0;
-     stopButtonFlag = 0;
+     UART1_Write_Text("Start or stop\n");
+     listen = ~listen;
+     pause = 0;
+     startAndStopButtonFlag = 0;
 }
 
 void sendButtonAction()
 {
+     unsigned int i;
+     unsigned int lastItem;
+     lastItem = adresse / 21;
      UART1_Write_Text("Send\n");
+     
+     for (i = 0 ; i < lastItem ; ++i)
+     {
+         UART1_Write_Text(Data_I2C_24LC32A_EEPROM_Read(i));
+     }
+     
      sendButtonFlag = 0;
 }
 
@@ -250,8 +252,7 @@ void interrupt_configuration()
      INTCON.GIE=1;      // Autorisation generale des IT
      INTCON.RBIF=0; 	   // Efface le flag d'IT sur RB cf p20 datasheet du 16F877A
      
-     startButtonFlag = 0;
-     stopButtonFlag = 0;
+     startAndStopButtonFlag = 0;
      sendButtonFlag = 0;
 }
 
@@ -265,13 +266,9 @@ void interrupt()
 
         if (portbValue == 0x80)    // RB7 appuyé
         {
-            startButtonFlag = 1;
+            startAndStopButtonFlag = 1;
         } 
         else if (portbValue == 0x40)     // RB6 appuyé
-        {
-            stopButtonFlag  = 1;
-        } 
-        else if (portbValue == 0x20)// RB5 appuyé
         {
             sendButtonFlag  = 1;
         }
@@ -305,13 +302,9 @@ void main()
    
    UART1_Write_Text("Start\n");
    
-
-
   while (1)
   {
-   
-   if (startButtonFlag) startButtonAction();
-   if (stopButtonFlag) stopButtonAction();
+   if (startAndStopButtonFlag) startAndStopButtonAction();
    if (sendButtonFlag) sendButtonAction();
    
    if (pause > 0)
@@ -368,7 +361,7 @@ void main()
         if (counter == 4 && uart_rd != ',')      // longitude data
         {
          longitude[longitude_ptr++] = uart_rd;
-         }
+        }
 
         if (counter == 5 && uart_rd != ',')      //   longitude hemisphere indicator (E or W)
         {

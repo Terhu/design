@@ -18,8 +18,7 @@ char uart_rd;
 
 
 
-bit startButtonFlag;
-bit stopButtonFlag;
+bit startAndStopButtonFlag;
 bit sendButtonFlag;
 
 bit listen;
@@ -195,23 +194,26 @@ char * Data_I2C_24LC32A_EEPROM_Read(unsigned int item)
 
 
 
-void startButtonAction()
+void startAndStopButtonAction()
 {
- UART1_Write_Text("Start\n");
- listen = 1;
- startButtonFlag = 0;
-}
-
-void stopButtonAction()
-{
- UART1_Write_Text("Stop\n");
- listen = 0;
- stopButtonFlag = 0;
+ UART1_Write_Text("Start or stop\n");
+ listen = ~listen;
+ pause = 0;
+ startAndStopButtonFlag = 0;
 }
 
 void sendButtonAction()
 {
+ unsigned int i;
+ unsigned int lastItem;
+ lastItem = adresse / 21;
  UART1_Write_Text("Send\n");
+
+ for (i = 0 ; i < lastItem ; ++i)
+ {
+ UART1_Write_Text(Data_I2C_24LC32A_EEPROM_Read(i));
+ }
+
  sendButtonFlag = 0;
 }
 
@@ -226,8 +228,7 @@ void interrupt_configuration()
  INTCON.GIE=1;
  INTCON.RBIF=0;
 
- startButtonFlag = 0;
- stopButtonFlag = 0;
+ startAndStopButtonFlag = 0;
  sendButtonFlag = 0;
 }
 
@@ -241,13 +242,9 @@ void interrupt()
 
  if (portbValue == 0x80)
  {
- startButtonFlag = 1;
+ startAndStopButtonFlag = 1;
  }
  else if (portbValue == 0x40)
- {
- stopButtonFlag = 1;
- }
- else if (portbValue == 0x20)
  {
  sendButtonFlag = 1;
  }
@@ -281,13 +278,9 @@ void main()
 
  UART1_Write_Text("Start\n");
 
-
-
  while (1)
  {
-
- if (startButtonFlag) startButtonAction();
- if (stopButtonFlag) stopButtonAction();
+ if (startAndStopButtonFlag) startAndStopButtonAction();
  if (sendButtonFlag) sendButtonAction();
 
  if (pause > 0)

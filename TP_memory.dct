@@ -1079,11 +1079,9 @@ sspm3_bit
 sspov
 sspov_bit
 sspstat
-startbuttonaction
-startbuttonflag
+startandstopbuttonaction
+startandstopbuttonflag
 status
-stopbuttonaction
-stopbuttonflag
 str
 strcat
 strchr
