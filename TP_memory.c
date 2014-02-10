@@ -23,6 +23,8 @@
      - RX and TX UART switches on EasyPIC5 should be turned ON (SW7.1 and SW8.1).
 */
 
+#define TRAME_LG 24
+
 // LCD module connections
 sbit LCD_RS at RB4_bit;
 sbit LCD_EN at RB5_bit;
@@ -44,17 +46,18 @@ char uart_rd;
 
 bit startAndStopButtonFlag;
 bit sendButtonFlag;
+bit timeButtonFlag;
 
 bit listen;
 
 unsigned int pause;
 
+unsigned int  timeDelay;
+
 /** String **/
 
-char lattitude[15];
+char lattitude[40];
 int lattitude_ptr = 0;
-char longitude[15];
-int longitude_ptr = 0;
 int counter;
 char affichage[4] ;
 
@@ -83,16 +86,16 @@ void Data_Write(char * lattitude, char * longitude)
 char * Data_Eeprom_Read(int item)
 {
   int indice;
-  char donnees[22];
+  char donnees[50];
   char address = 0;
-  address += (item*21);
+  address += (item*TRAME_LG);
   
-  for (indice = 0; indice < 21; ++indice)
+  for (indice = 0; indice < TRAME_LG; ++indice)
   {
       donnees[indice]=EEPROM_Read(address+indice);
       Delay_ms(250);
   }
-  donnees[21]='\0';
+  donnees[TRAME_LG]='\0';
   
   return donnees;
 }
@@ -116,22 +119,16 @@ void Data_I2C_EEPROM_Write(char * donnees)
      adresse += indice;
 }
 
-void I2C_Data_Write(char * lattitude, char * longitude)
-{
-     Data_I2C_EEPROM_Write(lattitude);
-     Data_I2C_EEPROM_Write(longitude);
-}
-
 char * Data_I2C_EEPROM_Read(int item)
 {
      int indice;
-  char donnees[22];
+  char donnees[50];
   char address = 0;
   char car;
   
-  address += (item*21);
+  address += (item*TRAME_LG);
   
-  for (indice = 0; indice < 21; ++indice)
+  for (indice = 0; indice < TRAME_LG; ++indice)
   {
     I2C1_Start();              // issue I2C start signal
     I2C1_Wr(0xA0);             // send byte via I2C  (device address + W)
@@ -143,7 +140,7 @@ char * Data_I2C_EEPROM_Read(int item)
     Delay_ms(10);
     donnees[indice]=car;
   }
-  donnees[21]='\0';
+  donnees[TRAME_LG]='\0';
 
   return donnees;
 }
@@ -176,24 +173,18 @@ void Data_I2C_24LC32A_EEPROM_Write(char * donnees)
      adresse += indice;
 }
 
-void I2C_24LC32A_Data_Write(char * lattitude, char * longitude)
-{
-     Data_I2C_24LC32A_EEPROM_Write(lattitude);
-     Data_I2C_24LC32A_EEPROM_Write(longitude);
-}
-
 char * Data_I2C_24LC32A_EEPROM_Read(unsigned int item)
 {
   unsigned short indice;
-  char donnees[22];
+  char donnees[50];
   unsigned int address = 0;
   unsigned short low_address;
   unsigned short high_address;
   char car;
 
-  address += (item*21);
+  address += (item*TRAME_LG);
 
-  for (indice = 0; indice < 21; ++indice)
+  for (indice = 0; indice < TRAME_LG; ++indice)
   {
        low_address = address & 0x00FF;
        high_address = (address >> 8) & 0x00FF;
@@ -211,16 +202,34 @@ char * Data_I2C_24LC32A_EEPROM_Read(unsigned int item)
        
        address += 1;
   }
-  donnees[21]='\0';
+  donnees[TRAME_LG]='\0';
 
   return donnees;
 }
 
 /** Button **/
 
+void timeButtonAction()
+{
+     timeButtonFlag =0;
+     switch (timeDelay)
+     {
+      case 5:  timeDelay=10;
+      break;
+      
+      case 10:  timeDelay=20;
+      break;
+      
+      case 20: timeDelay=5;
+      break;
+     }
+     
+     pause = timeDelay;
+
+}
+
 void startAndStopButtonAction()
 {
-     UART1_Write_Text("Start or stop\n");
      listen = ~listen;
      pause = 0;
      startAndStopButtonFlag = 0;
@@ -230,15 +239,17 @@ void sendButtonAction()
 {
      unsigned int i;
      unsigned int lastItem;
-     lastItem = adresse / 21;
-     UART1_Write_Text("Send\n");
+     lastItem = adresse / TRAME_LG;
      
      for (i = 0 ; i < lastItem ; ++i)
      {
          UART1_Write_Text(Data_I2C_24LC32A_EEPROM_Read(i));
+         UART1_Write(13);
+         UART1_Write(10);
      }
      
      sendButtonFlag = 0;
+     adresse = 0;
 }
 
 /** Interrupt **/
@@ -254,6 +265,7 @@ void interrupt_configuration()
      
      startAndStopButtonFlag = 0;
      sendButtonFlag = 0;
+     timeButtonFlag = 0;
 }
 
 void interrupt()
@@ -270,7 +282,11 @@ void interrupt()
         } 
         else if (portbValue == 0x40)     // RB6 appuyé
         {
-            sendButtonFlag  = 1;
+            timeButtonFlag  = 1;
+        }
+        else if(portbValue == 0x10)  //RB4 appuyé
+        {
+             sendButtonFlag = 1;
         }
       }
       INTCON.RBIF=0; // Efface le flag d'IT sur RB
@@ -295,17 +311,18 @@ void main()
   counter = 0;
   pause = 0;
   listen = 0;
+  
+  timeDelay=5;
    
    I2C1_Init(100000);         // initialize I2C communication
 
    interrupt_configuration();
    
-   UART1_Write_Text("Start\n");
-   
   while (1)
   {
    if (startAndStopButtonFlag) startAndStopButtonAction();
    if (sendButtonFlag) sendButtonAction();
+   if (timeButtonFlag) timeButtonAction();
    
    if (pause > 0)
    {
@@ -324,7 +341,6 @@ void main()
       {
          counter = 0;          // counter initialization
          lattitude_ptr = 0;
-         longitude_ptr = 0;
          g_counter = 0;
          good_trame = 0;
       }
@@ -346,45 +362,25 @@ void main()
 
       if (good_trame)
       {
-
-        if (counter == 2 && uart_rd != ',')      // lattitude data
+      
+        if (counter != 2 || uart_rd != ',')
         {
-           lattitude[lattitude_ptr++] = uart_rd;
+         if (counter >= 2 && lattitude_ptr < 24)
+           {
+                    lattitude[lattitude_ptr++] = uart_rd;
+            }
+        
+         if (counter >= 2 && lattitude_ptr == 24)
+           {
+                    lattitude[lattitude_ptr++] = '\0';
+            }
         }
-
-        if (counter == 3 && uart_rd != ',')      // lattitude hemisphere indicator (N or S)
-        {
-         lattitude[lattitude_ptr++] = uart_rd;
-         lattitude[lattitude_ptr++] = '\0';
-         }
-
-        if (counter == 4 && uart_rd != ',')      // longitude data
-        {
-         longitude[longitude_ptr++] = uart_rd;
-        }
-
-        if (counter == 5 && uart_rd != ',')      //   longitude hemisphere indicator (E or W)
-        {
-         longitude[longitude_ptr++] = uart_rd;
-         longitude[longitude_ptr++] = '\0';
-         }
 
         if (uart_rd == '*')
         {
-          // Data_Write(lattitude,longitude);
-
-           I2C_24LC32A_Data_Write(lattitude,longitude);
-           UART1_Write_Text(lattitude);
-           pause = 5;
-
-          // UART1_Write(13);
-           //UART1_Write(10);
-           //UART1_Write_Text(Data_Eeprom_Read(0));
-
-           //Delay_ms(250);
-
-           //Lcd_Out(2,1,longitude);
-           //Lcd_Out(1,1,str);
+           Data_I2C_24LC32A_EEPROM_Write(lattitude);
+           pause = timeDelay;
+           UART1_Write_Text("coucou \n");
         }
       }
 

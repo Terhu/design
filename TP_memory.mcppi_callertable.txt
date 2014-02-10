@@ -11,15 +11,9 @@ main
 		Delay_50us
 	I2C1_Init
 	interrupt_configuration
-	UART1_Write_Text
-		UART1_Write
 	startAndStopButtonAction
-		UART1_Write_Text
-			UART1_Write
 	sendButtonAction
 		Div_16x16_U
-		UART1_Write_Text
-			UART1_Write
 		Data_I2C_24LC32A_EEPROM_Read
 			Mul_16x16_U
 			I2C1_Start
@@ -28,12 +22,17 @@ main
 			I2C1_Repeated_Start
 			I2C1_Rd
 			I2C1_Stop
+		UART1_Write_Text
+			UART1_Write
+		UART1_Write
+	timeButtonAction
 	UART1_Data_Ready
 	UART1_Read
-	I2C_24LC32A_Data_Write
-		Data_I2C_24LC32A_EEPROM_Write
-			I2C1_Start
-				I2C1_Is_Idle
-			I2C1_Wr
-			I2C1_Stop
+	Data_I2C_24LC32A_EEPROM_Write
+		I2C1_Start
+			I2C1_Is_Idle
+		I2C1_Wr
+		I2C1_Stop
+	UART1_Write_Text
+		UART1_Write
 interrupt

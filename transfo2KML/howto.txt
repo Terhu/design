@@ -1,0 +1,21 @@
+Dans une fenêtre de commande :
+
+transfo2KML.exe votre_nom_de_fichier_a_traiter.txt nom_du_fichier_kml.kml
+
+
+Si le fichier kml n'existe pas, il sera créé.
+Si il existe déjà, ça écrit dessus.
+
+Normalement votre_nom_de_fichier_a_traiter.txt est dans le format suivant :
+
+4545.5322,N,00306.6839,E
+4545.5323,N,00306.6839,E 
+4545.5324,N,00306.6839,E
+
+Il est issu des trames GPS qui ont été traitées par le µC, stockées en mémoire
+et restituées via RS232 (faire un log de ce qui arrive dans l'hyperterminal lorsqu'on
+est en mode "restitution")
+
+Utilisation du fichier cmd.bat :
+nom d'entrée : test.txt
+nom de sortie : test.kml
