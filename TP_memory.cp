@@ -16,15 +16,17 @@ sbit LCD_D7_Direction at TRISB3_bit;
 
 char uart_rd;
 
-bit start_button;
-bit stop_button;
-bit send_button;
+
 
 bit startButtonFlag;
 bit stopButtonFlag;
 bit sendButtonFlag;
 
 bit listen;
+
+unsigned int pause;
+
+
 
 char lattitude[15];
 int lattitude_ptr = 0;
@@ -89,7 +91,6 @@ void Data_I2C_EEPROM_Write(char * donnees)
  ++indice;
  }
  adresse += indice;
-
 }
 
 void I2C_Data_Write(char * lattitude, char * longitude)
@@ -194,32 +195,11 @@ char * Data_I2C_24LC32A_EEPROM_Read(unsigned int item)
 
 
 
-void initButton()
-{
- TRISB = 0x0B;
- start_button = 0;
- stop_button = 0;
- send_button = 0;
-}
-
 void startButtonAction()
 {
  UART1_Write_Text("Start\n");
  listen = 1;
  startButtonFlag = 0;
-}
-
-void startButton()
-{
- if (Button(&PORTB, 0, 1, 1))
- {
- start_button = 1;
- }
- if (start_button && Button(&PORTB, 0, 1, 0))
- {
- start_button = 0;
- startButtonAction();
- }
 }
 
 void stopButtonAction()
@@ -229,38 +209,10 @@ void stopButtonAction()
  stopButtonFlag = 0;
 }
 
-void stopButton()
-{
- if (Button(&PORTB, 1, 1, 1))
- {
- stop_button = 1;
- }
- if (stop_button && Button(&PORTB, 1, 1, 0))
- {
- stop_button = 0;
- stopButtonAction();
- }
-
-}
-
 void sendButtonAction()
 {
  UART1_Write_Text("Send\n");
  sendButtonFlag = 0;
-}
-
-void sendButton()
-{
- if (Button(&PORTB, 3, 1, 1))
- {
- send_button = 1;
- }
- if (send_button && Button(&PORTB, 3, 1, 0))
- {
- send_button = 0;
- sendButtonAction();
- }
-
 }
 
 
@@ -312,8 +264,6 @@ void main()
  short g_counter = 0;
 
 
-
-
  UART1_Init(9600);
  Delay_ms(100);
  Lcd_Init();
@@ -322,28 +272,31 @@ void main()
  Lcd_Cmd(_LCD_CURSOR_OFF);
 
  counter = 0;
+ pause = 0;
+ listen = 0;
 
  I2C1_Init(100000);
 
  interrupt_configuration();
 
-
-
  UART1_Write_Text("Start\n");
 
- listen = 0;
+
 
  while (1)
  {
-
-
-
 
  if (startButtonFlag) startButtonAction();
  if (stopButtonFlag) stopButtonAction();
  if (sendButtonFlag) sendButtonAction();
 
- if (listen)
+ if (pause > 0)
+ {
+ delay_ms(1000);
+ --pause;
+ }
+
+ if (listen && pause == 0)
  {
 
  if (UART1_Data_Ready())
@@ -405,8 +358,7 @@ void main()
 
  I2C_24LC32A_Data_Write(lattitude,longitude);
  UART1_Write_Text(lattitude);
- Delay_ms(4750);
-
+ pause = 5;
 
 
 

@@ -494,7 +494,6 @@ ibov
 ibov_bit
 ibov_trise_bit
 indf
-initbutton
 int2double
 intcon
 inte
@@ -627,6 +626,7 @@ ow_reset
 ow_write
 p
 p_bit
+pause
 pcfg0
 pcfg0_bit
 pcfg1
@@ -868,8 +868,6 @@ s1d13700_write_text
 sdiv3232l
 sen
 sen_bit
-send_button
-sendbutton
 sendbuttonaction
 sendbuttonflag
 setfdz32
@@ -1081,13 +1079,9 @@ sspm3_bit
 sspov
 sspov_bit
 sspstat
-start_button
-startbutton
 startbuttonaction
 startbuttonflag
 status
-stop_button
-stopbutton
 stopbuttonaction
 stopbuttonflag
 str

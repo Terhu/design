@@ -40,15 +40,17 @@ sbit LCD_D7_Direction at TRISB3_bit;
 
 char uart_rd;
 
-bit start_button;
-bit stop_button;
-bit send_button;
+/** Button **/
 
 bit startButtonFlag;
 bit stopButtonFlag;
 bit sendButtonFlag;
 
 bit listen;
+
+unsigned int pause;
+
+/** String **/
 
 char lattitude[15];
 int lattitude_ptr = 0;
@@ -113,7 +115,6 @@ void Data_I2C_EEPROM_Write(char * donnees)
        ++indice;
      }
      adresse += indice;
-     
 }
 
 void I2C_Data_Write(char * lattitude, char * longitude)
@@ -218,32 +219,11 @@ char * Data_I2C_24LC32A_EEPROM_Read(unsigned int item)
 
 /** Button **/
 
-void initButton()
-{
- TRISB = 0x0B;
- start_button = 0;
- stop_button = 0;
- send_button = 0;
-}
-
 void startButtonAction()
 {
      UART1_Write_Text("Start\n");
      listen = 1;
      startButtonFlag = 0;
-}
-
-void startButton()
-{
-    if (Button(&PORTB, 0, 1, 1))
-    {
-      start_button = 1;
-    }
-    if (start_button && Button(&PORTB, 0, 1, 0))
-    {
-      start_button = 0;
-      startButtonAction();
-    }
 }
 
 void stopButtonAction()
@@ -253,38 +233,10 @@ void stopButtonAction()
      stopButtonFlag = 0;
 }
 
-void stopButton()
-{
-    if (Button(&PORTB, 1, 1, 1))
-    {
-      stop_button = 1;
-    }
-    if (stop_button && Button(&PORTB, 1, 1, 0))
-    {
-      stop_button = 0;
-      stopButtonAction();
-    }
-
-}
-
 void sendButtonAction()
 {
      UART1_Write_Text("Send\n");
      sendButtonFlag = 0;
-}
-
-void sendButton()
-{
-    if (Button(&PORTB, 3, 1, 1))
-    {
-      send_button = 1;
-    }
-    if (send_button && Button(&PORTB, 3, 1, 0))
-    {
-      send_button = 0;
-      sendButtonAction();
-    }
-
 }
 
 /** Interrupt **/
@@ -335,8 +287,6 @@ void main()
  char good_trame = 0;
  short g_counter = 0;
  // ADCON1 = 0;                      // Configure AN pins as digital
- 
- //INTCON = 0xC9;
 
   UART1_Init(9600);               // Initialize UART module at 9600 bps
   Delay_ms(100);                  // Wait for UART module to stabilize
@@ -346,6 +296,8 @@ void main()
   Lcd_Cmd(_LCD_CURSOR_OFF);          // Cursor off
 
   counter = 0;
+  pause = 0;
+  listen = 0;
    
    I2C1_Init(100000);         // initialize I2C communication
 
@@ -353,7 +305,7 @@ void main()
    
    UART1_Write_Text("Start\n");
    
-   listen = 0;
+
 
   while (1)
   {
@@ -362,7 +314,13 @@ void main()
    if (stopButtonFlag) stopButtonAction();
    if (sendButtonFlag) sendButtonAction();
    
-   if (listen)
+   if (pause > 0)
+   {
+      delay_ms(1000);
+      --pause;
+   }
+   
+   if (listen && pause == 0)
    {
   
     if (UART1_Data_Ready())      // If data is received,
@@ -424,6 +382,7 @@ void main()
 
            I2C_24LC32A_Data_Write(lattitude,longitude);
            UART1_Write_Text(lattitude);
+           pause = 5;
 
           // UART1_Write(13);
            //UART1_Write(10);
