@@ -291,7 +291,6 @@ void main()
  char good_trame = 0;
  short g_counter = 0;
 
-
  UART1_Init(9600);
  Delay_ms(100);
  Lcd_Init();
@@ -342,18 +341,14 @@ void main()
  ++g_counter;
  }
 
- if (g_counter == 3 && counter == 0)
+
+ if (g_counter == 3)
  {
- good_trame = 1;
- }
 
  if (uart_rd == ',')
  {
  ++counter;
  }
-
- if (good_trame)
- {
 
  if (counter != 2 || uart_rd != ',')
  {

@@ -367,19 +367,15 @@ void main()
           ++g_counter;
       }
       
-      if (g_counter == 3 && counter == 0)
+      /* si on a une bonne trame */
+      if (g_counter == 3)
       {
-         good_trame = 1;
-      }
-      
-      if (uart_rd == ',')        // word separation symbole
-      {
-           ++counter;
-      }
 
-      if (good_trame)
-      {
-      
+         if (uart_rd == ',')        // word separation symbole
+         {
+           ++counter;
+         }
+
         if (counter != 2 || uart_rd != ',')
         {
          if (counter >= 2 && lattitude_ptr < 24)
