@@ -795,8 +795,8 @@ L_main36:
 	CLRF       _pause+1
 ;TP_memory.c,329 :: 		listen = 0;
 	BCF        _listen+0, BitPos(_listen+0)
-;TP_memory.c,331 :: 		timeDelay=5;
-	MOVLW      5
+;TP_memory.c,331 :: 		timeDelay=2;
+	MOVLW      2
 	MOVWF      _timeDelay+0
 	MOVLW      0
 	MOVWF      _timeDelay+1
@@ -891,34 +891,34 @@ L__main65:
 	CLRF       _lattitude_ptr+1
 ;TP_memory.c,361 :: 		g_counter = 0;
 	CLRF       main_g_counter_L0+0
-;TP_memory.c,363 :: 		}
+;TP_memory.c,362 :: 		}
 L_main48:
-;TP_memory.c,365 :: 		if( uart_rd == 'G')
+;TP_memory.c,364 :: 		if( uart_rd == 'G')
 	MOVF       _uart_rd+0, 0
 	XORLW      71
 	BTFSS      STATUS+0, 2
 	GOTO       L_main49
-;TP_memory.c,367 :: 		++g_counter;
+;TP_memory.c,366 :: 		++g_counter;
 	INCF       main_g_counter_L0+0, 1
-;TP_memory.c,368 :: 		}
+;TP_memory.c,367 :: 		}
 L_main49:
-;TP_memory.c,371 :: 		if (g_counter == 3)
+;TP_memory.c,370 :: 		if (g_counter == 3)
 	MOVF       main_g_counter_L0+0, 0
 	XORLW      3
 	BTFSS      STATUS+0, 2
 	GOTO       L_main50
-;TP_memory.c,374 :: 		if (uart_rd == ',')        // word separation symbole
+;TP_memory.c,372 :: 		if (uart_rd == ',')        // word separation symbole
 	MOVF       _uart_rd+0, 0
 	XORLW      44
 	BTFSS      STATUS+0, 2
 	GOTO       L_main51
-;TP_memory.c,376 :: 		++counter;
+;TP_memory.c,374 :: 		++counter;
 	INCF       _counter+0, 1
 	BTFSC      STATUS+0, 2
 	INCF       _counter+1, 1
-;TP_memory.c,377 :: 		}
+;TP_memory.c,375 :: 		}
 L_main51:
-;TP_memory.c,379 :: 		if (counter != 2 || uart_rd != ',')
+;TP_memory.c,377 :: 		if (counter != 2 || uart_rd != ',')
 	MOVLW      0
 	XORWF      _counter+1, 0
 	BTFSS      STATUS+0, 2
@@ -934,7 +934,7 @@ L__main75:
 	GOTO       L__main64
 	GOTO       L_main54
 L__main64:
-;TP_memory.c,381 :: 		if (counter >= 2 && lattitude_ptr < 24)
+;TP_memory.c,379 :: 		if (counter >= 2 && lattitude_ptr < 24)
 	MOVLW      128
 	XORWF      _counter+1, 0
 	MOVWF      R0+0
@@ -960,7 +960,7 @@ L__main77:
 	BTFSC      STATUS+0, 0
 	GOTO       L_main57
 L__main63:
-;TP_memory.c,383 :: 		lattitude[lattitude_ptr++] = uart_rd;
+;TP_memory.c,381 :: 		lattitude[lattitude_ptr++] = uart_rd;
 	MOVF       _lattitude_ptr+0, 0
 	ADDLW      _lattitude+0
 	MOVWF      FSR
@@ -969,9 +969,9 @@ L__main63:
 	INCF       _lattitude_ptr+0, 1
 	BTFSC      STATUS+0, 2
 	INCF       _lattitude_ptr+1, 1
-;TP_memory.c,384 :: 		}
+;TP_memory.c,382 :: 		}
 L_main57:
-;TP_memory.c,386 :: 		if (counter >= 2 && lattitude_ptr == 24)
+;TP_memory.c,384 :: 		if (counter >= 2 && lattitude_ptr == 24)
 	MOVLW      128
 	XORWF      _counter+1, 0
 	MOVWF      R0+0
@@ -994,7 +994,7 @@ L__main79:
 	BTFSS      STATUS+0, 2
 	GOTO       L_main60
 L__main62:
-;TP_memory.c,388 :: 		lattitude[lattitude_ptr++] = '\0';
+;TP_memory.c,386 :: 		lattitude[lattitude_ptr++] = '\0';
 	MOVF       _lattitude_ptr+0, 0
 	ADDLW      _lattitude+0
 	MOVWF      FSR
@@ -1002,34 +1002,50 @@ L__main62:
 	INCF       _lattitude_ptr+0, 1
 	BTFSC      STATUS+0, 2
 	INCF       _lattitude_ptr+1, 1
-;TP_memory.c,389 :: 		}
+;TP_memory.c,387 :: 		}
 L_main60:
-;TP_memory.c,390 :: 		}
+;TP_memory.c,388 :: 		}
 L_main54:
-;TP_memory.c,392 :: 		if (uart_rd == '*')
-	MOVF       _uart_rd+0, 0
-	XORLW      42
+;TP_memory.c,390 :: 		if (lattitude_ptr > 24)
+	MOVLW      128
+	MOVWF      R0+0
+	MOVLW      128
+	XORWF      _lattitude_ptr+1, 0
+	SUBWF      R0+0, 0
 	BTFSS      STATUS+0, 2
+	GOTO       L__main80
+	MOVF       _lattitude_ptr+0, 0
+	SUBLW      24
+L__main80:
+	BTFSC      STATUS+0, 0
 	GOTO       L_main61
-;TP_memory.c,394 :: 		Data_I2C_24LC32A_EEPROM_Write(lattitude);
+;TP_memory.c,392 :: 		Data_I2C_24LC32A_EEPROM_Write(lattitude);
 	MOVLW      _lattitude+0
 	MOVWF      FARG_Data_I2C_24LC32A_EEPROM_Write_donnees+0
 	CALL       _Data_I2C_24LC32A_EEPROM_Write+0
-;TP_memory.c,395 :: 		pause = timeDelay;
+;TP_memory.c,393 :: 		pause = timeDelay;
 	MOVF       _timeDelay+0, 0
 	MOVWF      _pause+0
 	MOVF       _timeDelay+1, 0
 	MOVWF      _pause+1
-;TP_memory.c,396 :: 		}
-L_main61:
+;TP_memory.c,394 :: 		counter = 0;          // counter initialization
+	CLRF       _counter+0
+	CLRF       _counter+1
+;TP_memory.c,395 :: 		lattitude_ptr = 0;
+	CLRF       _lattitude_ptr+0
+	CLRF       _lattitude_ptr+1
+;TP_memory.c,396 :: 		g_counter = 0;
+	CLRF       main_g_counter_L0+0
 ;TP_memory.c,397 :: 		}
+L_main61:
+;TP_memory.c,398 :: 		}
 L_main50:
-;TP_memory.c,399 :: 		}
+;TP_memory.c,400 :: 		}
 L_main47:
-;TP_memory.c,401 :: 		}
+;TP_memory.c,402 :: 		}
 L_main46:
-;TP_memory.c,403 :: 		}
-	GOTO       L_main37
 ;TP_memory.c,404 :: 		}
+	GOTO       L_main37
+;TP_memory.c,405 :: 		}
 	GOTO       $+0
 ; end of _main

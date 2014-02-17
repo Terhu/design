@@ -302,7 +302,7 @@ void main()
  pause = 0;
  listen = 0;
 
- timeDelay=5;
+ timeDelay=2;
 
 
  I2C1_Init(100000);
@@ -333,7 +333,6 @@ void main()
  counter = 0;
  lattitude_ptr = 0;
  g_counter = 0;
- good_trame = 0;
  }
 
  if( uart_rd == 'G')
@@ -344,7 +343,6 @@ void main()
 
  if (g_counter == 3)
  {
-
  if (uart_rd == ',')
  {
  ++counter;
@@ -363,10 +361,13 @@ void main()
  }
  }
 
- if (uart_rd == '*')
+ if (lattitude_ptr > 24)
  {
  Data_I2C_24LC32A_EEPROM_Write(lattitude);
  pause = timeDelay;
+ counter = 0;
+ lattitude_ptr = 0;
+ g_counter = 0;
  }
  }
 
