@@ -543,6 +543,8 @@ lcd_rs
 lcd_rs_direction
 ldexp
 ldiv
+ledstartandstop
+ledtime
 left_to_right
 listen
 log

@@ -33,6 +33,4 @@ main
 			I2C1_Is_Idle
 		I2C1_Wr
 		I2C1_Stop
-	UART1_Write_Text
-		UART1_Write
 interrupt

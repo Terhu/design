@@ -30,6 +30,11 @@ unsigned int timeDelay;
 
 
 
+unsigned int ledStartAndStop;
+unsigned int ledTime;
+
+
+
 char lattitude[40];
 int lattitude_ptr = 0;
 int counter;
@@ -189,18 +194,18 @@ void timeButtonAction()
  switch (timeDelay)
  {
  case 5: timeDelay=10;
- PORTD = 0x02;
+ ledTime = 0x04;
  break;
 
  case 10: timeDelay=20;
- PORTD = 0x04;
+ ledTime = 0x08;
  break;
 
  case 20: timeDelay=5;
- PORTD = 0x01;
+ ledTime = 0x02;
  break;
  }
-
+ PORTD = ledTime | ledStartAndStop;
  pause = timeDelay;
 
 }
@@ -208,6 +213,8 @@ void timeButtonAction()
 void startAndStopButtonAction()
 {
  listen = ~listen;
+ ledStartAndStop = listen ? 0x01 : 0x00;
+ PORTD = ledTime | ledStartAndStop;
  pause = 0;
  startAndStopButtonFlag = 0;
 }
@@ -235,6 +242,9 @@ void interrupt_configuration()
 {
  PORTB=0;
  TRISB = 0xF0;
+ PORTD = 0;
+ TRISD = 0x00;
+ PORTD = 0x01;
 
  INTCON.RBIE=1;
  INTCON.GIE=1;
@@ -243,6 +253,10 @@ void interrupt_configuration()
  startAndStopButtonFlag = 0;
  sendButtonFlag = 0;
  timeButtonFlag = 0;
+
+ ledStartAndStop = 0;
+ ledTime = 0x02;
+ PORTD = ledTime | ledStartAndStop;
 }
 
 void interrupt()
@@ -290,7 +304,7 @@ void main()
  listen = 0;
 
  timeDelay=5;
- PORTD = 0;
+
 
  I2C1_Init(100000);
 
@@ -358,7 +372,6 @@ void main()
  {
  Data_I2C_24LC32A_EEPROM_Write(lattitude);
  pause = timeDelay;
- UART1_Write_Text("coucou \n");
  }
  }
 

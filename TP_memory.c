@@ -54,6 +54,11 @@ unsigned int pause;
 
 unsigned int  timeDelay;
 
+/** led **/
+
+unsigned int ledStartAndStop;
+unsigned int ledTime;
+
 /** String **/
 
 char lattitude[40];
@@ -215,15 +220,18 @@ void timeButtonAction()
      switch (timeDelay)
      {
       case 5:  timeDelay=10;
+               ledTime = 0x04;
       break;
       
       case 10:  timeDelay=20;
+                ledTime = 0x08;
       break;
       
       case 20: timeDelay=5;
+               ledTime = 0x02;
       break;
      }
-     
+     PORTD = ledTime | ledStartAndStop;
      pause = timeDelay;
 
 }
@@ -231,6 +239,8 @@ void timeButtonAction()
 void startAndStopButtonAction()
 {
      listen = ~listen;
+     ledStartAndStop = listen ? 0x01 : 0x00;
+     PORTD = ledTime | ledStartAndStop;
      pause = 0;
      startAndStopButtonFlag = 0;
 }
@@ -258,14 +268,21 @@ void interrupt_configuration()
 {
      PORTB=0;
      TRISB = 0xF0; // Initialisation du port B en entree pour RB7, RB6, RB5 et RB4
+     PORTD = 0;
+     TRISD = 0x00;
+     PORTD = 0x01;
      
      INTCON.RBIE=1;     // Autorise l'IT du RB
      INTCON.GIE=1;      // Autorisation generale des IT
-     INTCON.RBIF=0; 	   // Efface le flag d'IT sur RB cf p20 datasheet du 16F877A
+     INTCON.RBIF=0;            // Efface le flag d'IT sur RB cf p20 datasheet du 16F877A
      
      startAndStopButtonFlag = 0;
      sendButtonFlag = 0;
      timeButtonFlag = 0;
+     
+       ledStartAndStop = 0;
+       ledTime = 0x02;
+       PORTD = ledTime | ledStartAndStop;
 }
 
 void interrupt()
@@ -299,7 +316,6 @@ void main()
 {
  char good_trame = 0;
  short g_counter = 0;
- // ADCON1 = 0;                      // Configure AN pins as digital
 
   UART1_Init(9600);               // Initialize UART module at 9600 bps
   Delay_ms(100);                  // Wait for UART module to stabilize
@@ -313,6 +329,7 @@ void main()
   listen = 0;
   
   timeDelay=5;
+
    
    I2C1_Init(100000);         // initialize I2C communication
 
@@ -380,7 +397,6 @@ void main()
         {
            Data_I2C_24LC32A_EEPROM_Write(lattitude);
            pause = timeDelay;
-           UART1_Write_Text("coucou \n");
         }
       }
 
